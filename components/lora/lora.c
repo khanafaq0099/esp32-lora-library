@@ -388,9 +388,10 @@ lora_send_packet(uint8_t *buf, int size)
 {
    /*
     * Transfer data to radio.
+    * Lora FIFO can only be filled in standby mode
     */
-   lora_idle();
-   lora_write_reg(REG_FIFO_ADDR_PTR, 0);
+   lora_idle(); 
+   lora_write_reg(REG_FIFO_ADDR_PTR, 0); 
 
    for(int i=0; i<size; i++) 
       lora_write_reg(REG_FIFO, *buf++);
@@ -399,12 +400,13 @@ lora_send_packet(uint8_t *buf, int size)
    
    /*
     * Start transmission and wait for conclusion.
+    * Data transmission is initiated by sending TX mode request.
     */
    lora_write_reg(REG_OP_MODE, MODE_LONG_RANGE_MODE | MODE_TX);
-   while((lora_read_reg(REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0)
+   while((lora_read_reg(REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0) // when TX Done is set break.
       vTaskDelay(2);
 
-   lora_write_reg(REG_IRQ_FLAGS, IRQ_TX_DONE_MASK);
+   lora_write_reg(REG_IRQ_FLAGS, IRQ_TX_DONE_MASK); // clear the TX Done flag in irq flag register
 }
 
 /**
